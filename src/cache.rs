@@ -7,7 +7,7 @@ use log::debug;
 use rusqlite::{params, Connection, Result, Transaction, TransactionBehavior};
 use std::fmt;
 use std::path::PathBuf;
-use std::{env, fs, io};
+use std::{fs, io};
 
 const SCHEMA_VERSION: &str = "0.1.0";
 
@@ -35,47 +35,14 @@ pub struct CacheConfig {
 }
 
 impl CacheConfig {
-    /// If a full path wasn't supplied for the local database, then try to pick something reasonable
-    /// based on the
-    /// [XDG Base Directory Spec](https://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html).
-    ///
-    /// > _`$XDG_CACHE_HOME` defines the base directory relative to which user specific
-    /// > non-essential data files should be stored._
-    ///
-    /// > _If `$XDG_CACHE_HOME` is either not set or empty, a default equal to
-    /// > `$HOME/.cache` should be used._
-    ///
-    /// If `$HOME` can't be determined, stray from the basedir spec and try the OS's temporary
-    /// directory. Failing that, set a relative path.
+    /// If a full path wasn't supplied for the local database, then create
+    /// database in the current working directory.
     pub fn default_db_path() -> String {
-        let mut path = std::path::PathBuf::new();
-        let cache_namespace = "nvd";
         let db_name = "nvd.sqlite3";
 
-        // Try $XDG_CACHE_HOME
-        if let Ok(xdg_cache_home) = env::var("XDG_CACHE_HOME") {
-            path.push(xdg_cache_home);
-        } else if let Some(home_dir) = home::home_dir() {
-            // Try ~/.cache
-            path.push(home_dir);
-            path.push(".cache");
-        } else {
-            // Use $TMP
-            path.push(env::temp_dir());
-        }
-
-        path.push(cache_namespace);
+        let mut path = std::env::current_dir().unwrap();
         path.push(db_name);
-
-        // Try converting path to string though not all paths may be UTF-8 safe
-        if let Some(string_path) = path.to_str() {
-            return string_path.to_string();
-        }
-
-        // failing all else, try relative path
-        let mut fallback = std::path::PathBuf::from(cache_namespace);
-        fallback.push(db_name);
-        fallback.to_str().unwrap().to_string()
+        path.to_str().unwrap().to_string()
     }
 
     /// Create a new ``CacheConfig`` with some reasonable defaults.
@@ -350,7 +317,8 @@ fn update_cves(
             stmt.insert(params![
                 cve.cve.cve_data_meta.id,
                 description,
-                serde_json::to_string(&cve.cve).unwrap_or_else(|_| { "{}".to_string() })
+                // serde_json::to_string(&cve.cve).unwrap_or_else(|_| { "{}".to_string() })
+                serde_json::to_string(&cve).unwrap_or_else(|_| { "{}".to_string() })
             ])?;
         }
     }
@@ -517,7 +485,7 @@ pub fn get_all(config: &CacheConfig) -> Result<Vec<Cve>, CacheError> {
 /// let cve_result = search_by_id(&config, "CVE-2019-18254").unwrap();
 /// println!("{:?}", &cve_result);
 /// ```
-pub fn search_by_id(config: &CacheConfig, cve: &str) -> Result<Cve, CacheError> {
+pub fn search_by_id(config: &CacheConfig, cve: &str) -> Result<CveContainer, CacheError> {
     let conn = Connection::open(&config.db)?;
 
     let mut stmt = conn.prepare("SELECT * FROM cve where id=?1")?;
@@ -529,7 +497,7 @@ pub fn search_by_id(config: &CacheConfig, cve: &str) -> Result<Cve, CacheError> 
 
     stmt.finalize()?;
 
-    let result: Cve = serde_json::from_str(data.as_str())?;
+    let result: CveContainer = serde_json::from_str(data.as_str())?;
 
     match conn.close() {
         Ok(_) => Ok(result),
@@ -553,6 +521,7 @@ pub fn search_by_id(config: &CacheConfig, cve: &str) -> Result<Cve, CacheError> 
 /// ```
 
 pub fn search_description(config: &CacheConfig, text: &str) -> Result<Vec<String>, CacheError> {
+    println!("in search_description");
     let conn = Connection::open(&config.db)?;
 
     let mut stmt = conn.prepare("SELECT id FROM cve where description like '%' || ?1 || '%'")?;

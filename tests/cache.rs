@@ -1,28 +1,15 @@
 use nvd_cve::cache::{search_by_id, CacheConfig};
 use std::fs;
 mod util;
-use home::home_dir;
 use nvd_cve::cache::sync_blocking;
 use nvd_cve::cve::CveFeed;
-use std::env;
-use std::path::PathBuf;
 use util::MockBlockingClient;
 
 #[test]
 fn test_sync_config_defaults() {
-    env::set_var("XDG_CACHE_HOME", "./tests/files/.cache");
+    //env::set_var("XDG_CACHE_HOME", "./tests/files/.cache");
     let config = CacheConfig::default();
-    let mut db_path = PathBuf::from("./tests/files/.cache");
-    db_path.push("nvd");
-    db_path.push("nvd.sqlite3");
-    assert_eq!(config.db.as_str(), db_path.to_str().unwrap());
-
-    env::remove_var("XDG_CACHE_HOME");
-    env::set_var("HOME", "./tests/files");
-    let config = CacheConfig::default();
-    let mut db_path = home_dir().unwrap();
-    db_path.push(".cache");
-    db_path.push("nvd");
+    let mut db_path = std::env::current_dir().unwrap();
     db_path.push("nvd.sqlite3");
     assert_eq!(config.db.as_str(), db_path.to_str().unwrap());
 }

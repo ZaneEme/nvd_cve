@@ -1,3 +1,5 @@
 /target
 .idea
 tests/files/.cache/nvd/*
+*.sqlite3
+.vscode

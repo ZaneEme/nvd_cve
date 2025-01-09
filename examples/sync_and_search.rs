@@ -24,7 +24,7 @@ pub fn main() {
             let cve_result = search_by_id(&config, &cve).unwrap();
             println!(
                 "{}: {}",
-                cve, &cve_result.description.description_data[0].value
+                cve, &cve_result.cve.description.description_data[0].value
             );
         }
     }

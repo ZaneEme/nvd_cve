@@ -68,6 +68,7 @@ pub fn search(matches: &ArgMatches) {
             }
         }
     } else if let Some(cve) = matches.value_of("CVE") {
+
         match search_by_id(&config, cve) {
             Ok(cve_result) => println!("{}", serde_json::to_string_pretty(&cve_result).unwrap()),
             Err(error) => {
