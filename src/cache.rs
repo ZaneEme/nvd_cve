@@ -2,7 +2,7 @@ use crate::client::{BlockingHttpClient, HttpError};
 use crate::cve::{Cve, CveContainer, CveFeed};
 use crate::feed::{Feed, Metafile, MetafileError};
 use chrono::NaiveDateTime;
-use humansize::{file_size_opts as options, FileSize};
+use humansize::{format_size, DECIMAL};
 use log::debug;
 use rusqlite::{params, Connection, Result, Transaction, TransactionBehavior};
 use std::fmt;
@@ -384,10 +384,7 @@ pub fn sync_blocking<C: BlockingHttpClient>(
                 format!(
                     "[Feed: {}] Fetching feed ({})",
                     feed.name,
-                    metafile
-                        .gz_size
-                        .file_size(options::CONVENTIONAL)
-                        .unwrap_or_default()
+                    &format_size(metafile.gz_size, DECIMAL)
                 )
                 .as_str(),
             );
