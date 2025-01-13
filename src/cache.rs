@@ -36,11 +36,12 @@ pub struct CacheConfig {
 
 impl CacheConfig {
     /// If a full path wasn't supplied for the local database, then create
-    /// database in the current working directory.
+    /// database in the directory of the executable.
     pub fn default_db_path() -> String {
         let db_name = "nvd.sqlite3";
 
-        let mut path = std::env::current_dir().unwrap();
+        let mut path = std::env::current_exe().unwrap();
+        path.pop();
         path.push(db_name);
         path.to_str().unwrap().to_string()
     }
