@@ -9,7 +9,8 @@ use util::MockBlockingClient;
 fn test_sync_config_defaults() {
     //env::set_var("XDG_CACHE_HOME", "./tests/files/.cache");
     let config = CacheConfig::default();
-    let mut db_path = std::env::current_dir().unwrap();
+    let mut db_path = std::env::current_exe().unwrap();
+    db_path.pop();
     db_path.push("nvd.sqlite3");
     assert_eq!(config.db.as_str(), db_path.to_str().unwrap());
 }
