@@ -6,32 +6,32 @@ use nvd_cve::client::{BlockingHttpClient, ReqwestBlockingClient};
 pub fn sync(matches: &ArgMatches) {
     let mut config = CacheConfig::new();
 
-    if matches.is_present("show") {
+    if matches.get_flag("show-default") {
         println!("Default Config Values:\n{}", config);
         return;
     }
 
-    if let Some(url) = matches.value_of("url") {
+    if let Some(url) = matches.get_one::<String>("url").map(|s| s.as_str()) {
         config.url = String::from(url);
     }
 
-    if let Some(feeds) = matches.value_of("feeds") {
+    if let Some(feeds) = matches.get_one::<String>("feeds").map(|s| s.as_str()) {
         config.feeds = feeds.split(',').map(|feed| feed.to_string()).collect();
     }
 
-    if let Some(db) = matches.value_of("db") {
+    if let Some(db) = matches.get_one::<String>("db").map(|s| s.as_str()) {
         config.db = String::from(db);
     }
 
-    if matches.is_present("no_progress") {
+    if matches.get_flag("no-progress") {
         config.show_progress = false;
     }
 
-    if matches.is_present("force") {
+    if matches.get_flag("force") {
         config.force_update = true;
     }
 
-    if matches.is_present("verbose") {
+    if matches.get_flag("verbose") {
         env_logger::init();
     }
 
@@ -46,11 +46,11 @@ pub fn sync(matches: &ArgMatches) {
 pub fn search(matches: &ArgMatches) {
     let mut config = CacheConfig::new();
 
-    if let Some(db) = matches.value_of("db") {
+    if let Some(db) = matches.get_one::<String>("db").map(|s| s.as_str()) {
         config.db = String::from(db);
     }
 
-    if let Some(text) = matches.value_of("text") {
+    if let Some(text) = matches.get_one::<String>("text").map(|s| s.as_str()) {
         match search_description(&config, text) {
             Ok(cves) => {
                 if cves.is_empty() {
@@ -67,8 +67,7 @@ pub fn search(matches: &ArgMatches) {
                 std::process::exit(2);
             }
         }
-    } else if let Some(cve) = matches.value_of("CVE") {
-
+    } else if let Some(cve) = matches.get_one::<String>("CVE").map(|s| s.as_str()) {
         match search_by_id(&config, cve) {
             Ok(cve_result) => println!("{}", serde_json::to_string_pretty(&cve_result).unwrap()),
             Err(error) => {
